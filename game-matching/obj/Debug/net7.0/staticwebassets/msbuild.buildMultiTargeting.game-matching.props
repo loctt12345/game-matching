@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\game-matching.props" />
+</Project>
