@@ -11,9 +11,9 @@ namespace game_matching.Hubs
     public class MatchingHub : Hub
     {
         private readonly ILogger<MatchingHub> _logger;
-        private readonly MatchingService _matchingService;
+        private readonly InMemoryMatchingService _matchingService;
 
-        public MatchingHub(ILogger<MatchingHub> logger, MatchingService matchingService)
+        public MatchingHub(ILogger<MatchingHub> logger, InMemoryMatchingService matchingService)
         {
             _logger = logger;
             _matchingService = matchingService;
@@ -56,7 +56,8 @@ namespace game_matching.Hubs
                     if (user != null)
                     {
                         user.SocketId = Context.ConnectionId;
-                        var result = await _matchingService.Matching(user);
+                        var result = _matchingService.Matching(user);
+                        _logger.LogCritical(result.Id.ToString());
                         if (result != null)
                         {
                             if (result.Room != null)
@@ -87,7 +88,7 @@ namespace game_matching.Hubs
 
         public async Task ReMatching(string playerId)
         {
-            var player = await _matchingService.ReMatching(playerId, Context.ConnectionId);
+            var player = _matchingService.ReMatching(playerId, Context.ConnectionId);
             if (player != null) 
             {
                 if (player.Room != null)
