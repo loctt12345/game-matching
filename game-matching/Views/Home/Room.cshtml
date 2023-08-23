@@ -1,0 +1,128 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+
+<style>
+    .message-text {
+        margin: 0 !important;
+        padding: 5px !important;
+        word-wrap: break-word;
+        font-weight: 200;
+        font-size: 14px;
+        padding-bottom: 0 !important;
+    }
+
+    .receiver {
+        width: auto !important;
+        padding: 4px 10px 7px !important;
+        border-radius: 10px 10px 10px 0;
+        background: #ffff8d;
+        font-size: 12px;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, .2);
+        word-wrap: break-word;
+        display: inline-block;
+    }
+
+    .sender {
+        float: right;
+        width: auto !important;
+        background: #dcf8c6;
+        border-radius: 10px 10px 0 10px;
+        padding: 4px 10px 7px !important;
+        font-size: 12px;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, .2);
+        display: inline-block;
+        word-wrap: break-word;
+    }
+
+    .message-main-receiver {
+        /*padding: 10px 20px;*/
+        max-width: 60%;
+    }
+
+    .message-main-sender {
+        padding: 3px 20px !important;
+        margin-left: 40% !important;
+        max-width: 60%;
+    }
+
+    .message-body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: auto;
+        height: auto;
+        margin-bottom: 5px !important;
+    }
+</style>
+
+<div class="container d-flex py-3">
+    <div class="col-md-8 me-2 border border-1 rounded-3 p-2 bg-light" style="height: 505px">
+        <div class="border border-1 rounded-3 mb-2 bg-white p-2 overflow-auto d-flex flex-column" style="height: 440px" id="chatBox">
+
+        </div>
+
+        <div class="d-flex align-items-center justify-content-around">
+            <div class="form-group col-md-11">
+                <input type="text" required class="form-control " id="chatInput"/>
+            </div>
+
+            <div class="form-group">
+                <button type="button" class="form-control btn btn-info" id="chatBtn"><i class="fa fa-paper-plane" aria-hidden="true"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card border-danger mb-1">
+            <div class="card-header">You</div>
+            <div class="card-body text-danger">
+                <h5 class="card-title d-flex justify-content-center">
+                    <i class="fa fa-microphone me-3" aria-hidden="true"></i>
+                    <i class="fa fa-headphones" aria-hidden="true"></i>
+                </h5>
+            </div>
+        </div>
+
+        <div class="pt-2 pb-2 bg-light border border-1 ">
+            <div class="p-3  overflow-auto" style="height: 378px" id="playersList">
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="newPlayerToast" class="toast hide border border-success" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="fa fa-user me-3" aria-hidden="true"></i>
+            <strong class="me-auto">Notification</strong>
+            <small>just now</small>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+            A new member has joined!
+        </div>
+    </div>
+</div>
+
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="removePlayerToast" class="toast hide  border border-danger" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="fa fa-user me-3" aria-hidden="true"></i>
+            <strong class="me-auto">Notification</strong>
+            <small>just now</small>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+            A member has left!
+        </div>
+    </div>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.13/signalr.min.js"></script>
+<script src="~/js/room.js"></script>
