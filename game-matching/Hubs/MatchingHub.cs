@@ -57,7 +57,6 @@ namespace game_matching.Hubs
                     {
                         user.SocketId = Context.ConnectionId;
                         var result = _matchingService.Matching(user);
-                        _logger.LogCritical(result.Id.ToString());
                         if (result != null)
                         {
                             if (result.Room != null)
@@ -120,6 +119,31 @@ namespace game_matching.Hubs
                         if (player.Id != thisPlayer.Id)
                         {
                             await Clients.Clients(player.SocketId).SendAsync("MessageCome", message, thisPlayer.Name);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                await Clients.Caller.SendAsync("ReMatchedFail");
+            }
+        }
+
+        public async Task MicRequest(string data, string type)
+        {
+            _logger.LogCritical(data + " " + type);
+            var thisPlayer = _matchingService.GetPlayerBySocketId(Context.ConnectionId);
+            if ((thisPlayer != null) && (thisPlayer.Room != null))
+            {
+                var room = _matchingService.GetRoom(thisPlayer.Room.Id);
+                if (room != null)
+                {
+                    var playerList = room.Players;
+                    foreach (var player in playerList)
+                    {
+                        if (player.Id != thisPlayer.Id)
+                        {
+                            await Clients.Clients(player.SocketId).SendAsync("MicResponse", data, type);
                         }
                     }
                 }

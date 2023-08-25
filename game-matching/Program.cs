@@ -11,7 +11,10 @@ builder.Services.AddControllersWithViews()
     .AddNewtonsoftJson(options =>
     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
 );
-builder.Services.AddSignalR();
+builder.Services.AddSignalR(hubOptions =>
+{
+    hubOptions.MaximumReceiveMessageSize = 128000;
+});
 //builder.Services.AddDbContext<GameMatchingDBContext>(options =>
 //options.UseSqlServer(builder.Configuration.GetConnectionString("GameMatchingConnectionString")));
 builder.Services.AddSingleton<InMemoryMatchingService>();
