@@ -62,18 +62,6 @@ namespace game_matching.Hubs
                             if (result.Room != null)
                             {
                                 await Clients.Caller.SendAsync("Matched", result.Room, result.Id);
-                                var room = _matchingService.GetRoom(result.Room.Id);
-                                if (room != null)
-                                {
-                                    var playerList = room.Players;
-                                    foreach (var player in playerList)
-                                    {
-                                        if (player.Id != result.Id)
-                                        {
-                                            await Clients.Client(player.SocketId).SendAsync("PlayerAdded", result);
-                                        }
-                                    }
-                                }
                             }
                         }
                         else
@@ -87,15 +75,24 @@ namespace game_matching.Hubs
 
         public async Task ReMatching(string playerId)
         {
-            var player = _matchingService.ReMatching(playerId, Context.ConnectionId);
-            if (player != null) 
+            var thisPlayer = _matchingService.ReMatching(playerId, Context.ConnectionId);
+            if (thisPlayer != null) 
             {
-                if (player.Room != null)
+                if (thisPlayer.Room != null)
                 {
-                    var room = _matchingService.GetRoom(player.Room.Id);
+                    var room = _matchingService.GetRoom(thisPlayer.Room.Id);
                     if (room != null)
                     {
                         await Clients.Caller.SendAsync("ReMatched", room.Players);
+                        var playerList = room.Players;
+                        foreach (var player in playerList)
+                        {
+                            if (player.Id != thisPlayer.Id)
+                            {
+                                await Clients.Client(player.SocketId).SendAsync("PlayerAdded", thisPlayer);
+                            }
+                        }
+
                     }
                 }
             }
@@ -129,24 +126,12 @@ namespace game_matching.Hubs
             }
         }
 
-        public async Task MicRequest(string data, string type)
+        public async Task MicRequest(string data, string type, string toSocketId)
         {
-            _logger.LogCritical(data + " " + type);
             var thisPlayer = _matchingService.GetPlayerBySocketId(Context.ConnectionId);
-            if ((thisPlayer != null) && (thisPlayer.Room != null))
+            if (thisPlayer != null)
             {
-                var room = _matchingService.GetRoom(thisPlayer.Room.Id);
-                if (room != null)
-                {
-                    var playerList = room.Players;
-                    foreach (var player in playerList)
-                    {
-                        if (player.Id != thisPlayer.Id)
-                        {
-                            await Clients.Clients(player.SocketId).SendAsync("MicResponse", data, type);
-                        }
-                    }
-                }
+                await Clients.Clients(toSocketId).SendAsync("MicResponse", data, type, Context.ConnectionId);
             }
             else
             {

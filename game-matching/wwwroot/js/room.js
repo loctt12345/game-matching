@@ -1,71 +1,118 @@
-let localStream;
-let pConnection = null;
-let audioSender;
+let localStream = null;
+let pConnection = {};
 const offerOptions = {
     offerToReceiveAudio: 1,
 };
+let soundTriggers = {};
+let analysers = {};
+var audioCtx = new AudioContext();
 
-const createPeerConnection = async (isMuted) => {
-    const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true, video: false
-    });
-    localStream = stream;
-    if (isMuted) {
-        localStream.getAudioTracks()[0].enabled = false;
+const checkSound = (socketId) => {
+    var dataArray = new Float32Array(analysers[socketId].fftSize);
+    analysers[socketId].getFloatTimeDomainData(dataArray);
+    var sum = 0;
+    for (var i = 0; i < analysers[socketId].fftSize; i++) {
+        sum += Math.abs(dataArray[i]);
     }
-    pConnection = new RTCPeerConnection();
-
-    pConnection.addEventListener('icecandidate', (e) => {
-        connection.invoke("MicRequest", JSON.stringify({ "data": e.candidate }), "candidate");
-    });
-
-    pConnection.addEventListener('track', async (e) => {
-        var audio = document.getElementById("audio");
-        audio.srcObject = e.streams[0];
-        audio.play();
-    });
-
-    audioSender = await pConnection.addTrack(...localStream.getAudioTracks(), localStream);
+    return (sum / analysers[socketId].fftSize) > 0.001;
 }
-
 
 var connection = new signalR.HubConnectionBuilder().withUrl("/matchingHub").build();
 connection.start().then(function () {
-    console.log(connection.connection.connectionId);
     const playerId = localStorage.getItem("PlayerId");
-    console.log(playerId);
-    connection.invoke("ReMatching", playerId);
-}).then(async () => {
-    createPeerConnection(true).then(async () => {
-        const offer = await pConnection.createOffer();
-        await pConnection.setLocalDescription(offer);
-        await connection.invoke("MicRequest", JSON.stringify({ "data": offer }), "offer");
+    if (playerId == null) {
+        window.location.replace("/");
     }
-    );
-}).catch(function (err) {
-    console.error(err.toString());
+    localStorage.removeItem("PlayerId");
+    if (localStream == null) {
+        navigator.mediaDevices.getUserMedia({
+            audio: true, video: false
+        }).then((stream) => {
+            localStream = stream;
+            connection.invoke("ReMatching", playerId);
+        });
+    }
 });
 
+const createPeerConnection = async (isMuted, socketId) => {
+    if (isMuted) {
+        localStream.getAudioTracks()[0].enabled = false;
+    }
+    pConnection[socketId] = new RTCPeerConnection();
+
+    pConnection[socketId].addEventListener('icecandidate', (e) => {
+        connection.invoke("MicRequest", JSON.stringify({ "data": e.candidate }), "candidate", socketId);
+    });
+
+    pConnection[socketId].addEventListener('track', (e) => {
+        let audio = document.getElementById(`audio${socketId}`);
+        audio.srcObject = e.streams[0];
+        var source = audioCtx.createMediaStreamSource(audio.srcObject);
+        if (analysers[socketId] == null) {
+            analysers[socketId] = audioCtx.createAnalyser();
+        }
+        source.connect(analysers[socketId]);
+        const trigger = setInterval(() => {
+            var ele = document.getElementById(socketId);
+            if (checkSound(socketId)) {
+                ele.classList.remove("border-secondary");
+                ele.classList.add("border-success");
+                ele.classList.add("shadow-sm");
+                ele.classList.add("border-2");
+            }
+            else {
+                ele.classList.remove("border-success");
+                ele.classList.remove("shadow-sm");
+                ele.classList.remove("border-2");
+                ele.classList.add("border-secondary");
+            }
+        });
+        soundTriggers[socketId] = trigger;
+        audio.play();
+    });
+
+    await pConnection[socketId].addTrack(...localStream.getAudioTracks(), localStream);
+}
+
+const handShake = async (socketId) => {
+    const offer = await pConnection[socketId].createOffer();
+    await pConnection[socketId].setLocalDescription(offer);
+    await connection.invoke("MicRequest", JSON.stringify({ "data": offer }), "offer", socketId);
+}
+
 const getAddPlayerHtml = (player) => {
+    let audioEle = document.createElement("audio");
+    audioEle.id = "audio" + player.socketId;
+    audioEle.className = "audioClass";
+    document.body.appendChild(audioEle);
     return (`
-        <div class="card border-secondary mb-2" style="height: 80px" id="${player.id}">
+        <div class="card border-secondary mb-2" style="height: 80px" id="${player.socketId}">
             <div class="card-header d-flex justify-content-center align-items-center" style="height: 30px">${player.name}</div>
             <div class="card-body text-secondary">
                 <h5 class="card-title d-flex justify-content-center">
-                    <i class="fa fa-microphone" aria-hidden="true" style="width: 20px" onclick="changeMicFunction('${"mic" + player.id}')" id=${"mic" + player.id}></i>
+                    <i class="fa fa-microphone" aria-hidden="true" style="width: 20px" onclick="changeMicFunction('${"mic" + player.socketId}')" id=${"mic" + player.socketId}></i>
                 </h5>
             </div>
         </div>
     `);
 }
 
-connection.on("ReMatched", (list) => {
+connection.on("ReMatched", async (list) => {
     var listElement = document.getElementById("playersList");
     for (let i = 0; i < list.length; ++i) {
         if (list[i].socketId != connection.connection.connectionId) {
             listElement.innerHTML = listElement.innerHTML + getAddPlayerHtml(list[i]);
         }
     }
+
+    setTimeout(async () => {
+        for (let i = 0; i < list.length; ++i) {
+            if (list[i].socketId != connection.connection.connectionId) {
+                await createPeerConnection(true, list[i].socketId);
+                await handShake(list[i].socketId);
+            }
+        }
+    }, 1000);
 });
 
 connection.on("ReMatchedFail", () => {
@@ -89,39 +136,61 @@ connection.on("MessageCome", (message, playerName) => {
     chatBox.scrollTop = chatBox.scrollHeight;
 });
 
-connection.on("PlayerAdded", (player) => {
+connection.on("PlayerAdded", async (player) => {
     var playerListEle = document.getElementById("playersList");
     playerListEle.innerHTML = playerListEle.innerHTML + getAddPlayerHtml(player);
+    if (pConnection[player.socketId] == null) {
+        let isMuted = document.getElementById("myMic").classList.contains("fa-microphone-slash");
+        await createPeerConnection(isMuted, player.socketId);
+    }
     const toastEle = document.getElementById("newPlayerToast");
     const toast = bootstrap.Toast.getOrCreateInstance(toastEle);
     toast.show();
 });
 
 connection.on("PlayerDisconnected", (player) => {
-    var playerEle = document.getElementById(player.id);
+    var playerEle = document.getElementById(player.socketId);
     playerEle?.remove();
     const toastEle = document.getElementById("removePlayerToast");
     const toast = bootstrap.Toast.getOrCreateInstance(toastEle);
+    if (pConnection[player.socketId] != null) {
+        pConnection[player.socketId].close();
+        delete pConnection[player.socketId];
+        document.getElementById(`audio${player.socketId}`).remove();
+    }
+    if (soundTriggers[player.socketId] != null) {
+        clearInterval(soundTriggers[player.socketId]);
+        delete soundTriggers[player.socketId];
+    }
+    if (analysers[player.socketId] != null) {
+        delete analysers[player.socketId];
+    }
     toast.show();
 });
 
-
-
-connection.on("MicResponse", async (data, type) => {
+connection.on("MicResponse", async (data, type, socketId) => {
     data = JSON.parse(data);
+    if (pConnection[socketId] == null) {
+        let checkExisted = setInterval(() => {
+            if (pConnection[socketId] != null) {
+                clearInterval(checkExisted);
+            }
+        });
+    }
+
     try {
         switch (type) {
             case "offer":
-                await pConnection.setRemoteDescription(new RTCSessionDescription(data.data));
-                var answer = await pConnection.createAnswer();
-                await pConnection.setLocalDescription(answer);
-                await connection.invoke("MicRequest", JSON.stringify({ "data": answer }), "answer");
+                await pConnection[socketId].setRemoteDescription(new RTCSessionDescription(data.data));
+                var answer = await pConnection[socketId].createAnswer();
+                await pConnection[socketId].setLocalDescription(answer);
+                await connection.invoke("MicRequest", JSON.stringify({ "data": answer }), "answer", socketId);
                 break;
             case "answer":
-                await pConnection.setRemoteDescription(new RTCSessionDescription(data.data));
+                await pConnection[socketId].setRemoteDescription(new RTCSessionDescription(data.data));
                 break;
             case "candidate":
-                await pConnection.addIceCandidate(new RTCIceCandidate(data.data));
+                await pConnection[socketId].addIceCandidate(new RTCIceCandidate(data.data));
                 break;
             default:
                 break;
@@ -140,8 +209,9 @@ const changeMicFunction = async (id) => {
             localStream.getAudioTracks()[0].enabled = true;
         }
         else {
+            var audio = document.getElementById(`audio${id.substring(3)}`);
+            audio.srcObject.getAudioTracks()[0].enabled = true;
         }
-
     }
     else {
         myMicEle.classList.remove("fa-microphone");
@@ -150,7 +220,8 @@ const changeMicFunction = async (id) => {
             localStream.getAudioTracks()[0].enabled = false;
         }
         else {
-
+            var audio = document.getElementById(`audio${id.substring(3)}`);
+            audio.srcObject.getAudioTracks()[0].enabled = false;
         }
     }
 };
@@ -187,9 +258,18 @@ document.getElementById("myVolume").onclick = () => {
     if (myMicEle.classList.contains("fa-volume-off")) {
         myMicEle.classList.remove("fa-volume-off");
         myMicEle.classList.add("fa-volume-up");
+        var audioList = document.getElementsByClassName("audioClass");
+        for (let i = 0; i < audioList.length; ++i) {
+            audioList[i].srcObject.getAudioTracks()[0].enabled = true;
+        }
     }
     else {
         myMicEle.classList.remove("fa-volume-up");
         myMicEle.classList.add("fa-volume-off");
+        var audioList = document.getElementsByClassName("audioClass");
+        for (let i = 0; i < audioList.length; ++i) {
+            audioList[i].srcObject.getAudioTracks()[0].enabled = false;
+        }
     }
 };
+
