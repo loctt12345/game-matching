@@ -138,5 +138,25 @@ namespace game_matching.Hubs
                 await Clients.Caller.SendAsync("ReMatchedFail");
             }
         }
+
+        public async Task OnChatting()
+        {
+            var thisPlayer = _matchingService.GetPlayerBySocketId(Context.ConnectionId);
+            if ((thisPlayer != null) && (thisPlayer.Room != null))
+            {
+                var room = _matchingService.GetRoom(thisPlayer.Room.Id);
+                if (room != null)
+                {
+                    var playerList = room.Players;
+                    foreach (var player in playerList)
+                    {
+                        if (player.Id != thisPlayer.Id)
+                        {
+                            await Clients.Clients(player.SocketId).SendAsync("IsChatting");
+                        }
+                    }
+                }
+            }
+        }
     }
 }

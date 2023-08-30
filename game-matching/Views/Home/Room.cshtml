@@ -58,14 +58,19 @@
 </style>
 
 <div class="container d-flex py-3">
-    <div class="col-md-8 me-2 border border-1 rounded-3 p-2 bg-light" style="height: 505px">
-        <div class="border border-1 rounded-3 mb-2 bg-white p-2 overflow-auto d-flex flex-column" style="height: 440px" id="chatBox">
+    <div class="col-md-8 me-2 border border-1 rounded-3 p-2 bg-light bg-opacity-25" style="height: 505px">
+        <div class="border border-3 rounded-3 mb-2 bg-white p-2 d-flex flex-column bg-opacity-75">
+            <div class="overflow-auto" style="height: 390px" id="chatBox">
+            </div>
 
+            <div id="chatting" style="visibility: hidden;">
+                <i style="font-size: 14px;">Someone is typing...</i>
+            </div>
         </div>
 
         <div class="d-flex align-items-center justify-content-around">
             <div class="form-group col-md-11">
-                <input type="text" required class="form-control " id="chatInput"/>
+                <input type="text" required class="form-control border border-3" id="chatInput" />
             </div>
 
             <div class="form-group">
@@ -85,7 +90,7 @@
             </div>
         </div>
 
-        <div class="pt-2 pb-2 bg-light border border-1 ">
+        <div class="pt-2 pb-2 bg-light border border-1 bg-opacity-25">
             <div class="p-3  overflow-auto" style="height: 378px" id="playersList">
 
             </div>

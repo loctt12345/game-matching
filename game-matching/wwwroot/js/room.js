@@ -103,6 +103,28 @@ connection.on("ReMatched", async (list) => {
         if (list[i].socketId != connection.connection.connectionId) {
             listElement.innerHTML = listElement.innerHTML + getAddPlayerHtml(list[i]);
         }
+        else {
+            switch (list[i].game) {
+                case "1":
+                    document.body.style.backgroundImage = "url(https://i.kinja-img.com/gawker-media/image/upload/c_fill,f_auto,fl_progressive,g_center,h_675,pg_1,q_80,w_1200/dc1565cd94e2c98927f2141109446455.jpg)";
+                    document.body.style.backgroundRepeat = "no-repeat";
+                    document.body.style.backgroundSize = "cover";
+                    break;
+                case "2":
+                    document.body.style.backgroundImage = "url(https://cdn.vn.garenanow.com/web/fo4vn/2020-Nov/Beckham/Beckham.jpg)";
+                    document.body.style.backgroundRepeat = "no-repeat";
+                    document.body.style.backgroundSize = "cover";
+                    break;
+                case "3":
+                    document.body.style.backgroundImage = "url(https://cdn.sforum.vn/sforum/wp-content/uploads/2022/07/mobile-game-publishers-1024x480-1.png)";
+                    document.body.style.backgroundRepeat = "no-repeat";
+                    document.body.style.backgroundSize = "cover";
+                    break;
+                default:
+                    break;
+            }
+
+        }
     }
 
     setTimeout(async () => {
@@ -200,6 +222,14 @@ connection.on("MicResponse", async (data, type, socketId) => {
     }
 });
 
+connection.on("IsChatting", () => {
+    var chatBox = document.getElementById("chatting");
+    chatBox.style.visibility = "visible";
+    setTimeout(() => {
+        chatBox.style.visibility = "hidden";
+    }, 1000);
+});
+
 const changeMicFunction = async (id) => {
     var myMicEle = document.getElementById(id);
     if (myMicEle.classList.contains("fa-microphone-slash")) {
@@ -228,9 +258,10 @@ const changeMicFunction = async (id) => {
 
 const chatFunction = () => {
     var input = document.getElementById("chatInput");
-    var chatBox = document.getElementById("chatBox");
-    chatBox.innerHTML = chatBox.innerHTML +
-        `
+    if (input.value.length > 0) {
+        var chatBox = document.getElementById("chatBox");
+        chatBox.innerHTML = chatBox.innerHTML +
+            `
         <div class="row message-body">
             <div class="message-main-sender">
                 <div class="sender">
@@ -241,15 +272,19 @@ const chatFunction = () => {
             </div>
         </div>
     `
-    connection.invoke("ChatRequest", input.value);
-    input.value = "";
-    chatBox.scrollTop = chatBox.scrollHeight;
+        connection.invoke("ChatRequest", input.value);
+        input.value = "";
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
 }
 
 document.getElementById("chatBtn").onclick = chatFunction;
 document.getElementById("chatInput").addEventListener("keypress", (e) => {
     if (e.key === "Enter") {
         chatFunction();
+    }
+    else {
+        connection.invoke("OnChatting");
     }
 });
 document.getElementById("myMic").onclick = () => changeMicFunction("myMic");
