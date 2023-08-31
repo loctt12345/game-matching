@@ -30,5 +30,6 @@ Do you love playing games with other people? Do you want to find new friends who
 - This is a ASP.NET Core MVC web app in framework .NET 7.
 - Websocket using SignalR library.
 - WebRTC for processing peer to peer function (Voice chat).
-- MS SQLServer to store queue of players and rooms (I'm using in-memory to store data but i also created a MatchingService for storing data in database using Entity Framework).  
+- MS SQLServer to store queue of players and rooms (I'm using in-memory to store data but i also created a MatchingService for storing data in database using Entity Framework).
+- I'm using a simple algorithm to match players: it will find the first room which match some information such as type of games, size of room and the room is not locked.
 
