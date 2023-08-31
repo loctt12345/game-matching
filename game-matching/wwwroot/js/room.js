@@ -21,7 +21,7 @@ var connection = new signalR.HubConnectionBuilder().withUrl("/matchingHub").buil
 connection.start().then(function () {
     const playerId = localStorage.getItem("PlayerId");
     if (playerId == null) {
-        window.location.replace("/");
+    window.location.replace("/");
     }
     localStorage.removeItem("PlayerId");
     if (localStream == null) {
@@ -138,6 +138,7 @@ connection.on("ReMatched", async (list) => {
 });
 
 connection.on("ReMatchedFail", () => {
+    console.log("fail");
     location.replace("/");
 });
 
@@ -279,6 +280,14 @@ const chatFunction = () => {
 }
 
 document.getElementById("chatBtn").onclick = chatFunction;
+document.getElementById("lockBtn").onclick = () => {
+    const lock = document.getElementById("lockBtn");
+    if (lock.innerHTML.includes("fa-unlock")) {
+        connection.invoke("LockRoom");
+    } else {
+        connection.invoke("UnlockRoom");
+    }
+};
 document.getElementById("chatInput").addEventListener("keypress", (e) => {
     if (e.key === "Enter") {
         chatFunction();
@@ -287,6 +296,31 @@ document.getElementById("chatInput").addEventListener("keypress", (e) => {
         connection.invoke("OnChatting");
     }
 });
+document.getElementById("exitBtn").onclick = () => {
+    window.location.replace("/");
+};
+document.getElementById("copyBtn").onclick = () => {
+    connection.invoke("GetRoomId");
+};
+
+connection.on("LockedRoom", () => {
+    const lock = document.getElementById("lockBtn");
+    lock.innerHTML = `<i class="fa fa-lock" aria-hidden="true"></i>`;
+});
+
+connection.on("UnlockedRoom", () => {
+    const lock = document.getElementById("lockBtn");
+    lock.innerHTML = `<i class="fa fa-unlock" aria-hidden="true"></i>`;
+});
+
+connection.on("ReceiveRoom", (roomId) => {
+    document.getElementById("copyBtn").innerHTML = `<i class="fa fa-check" aria-hidden="true"></i>`;
+    setTimeout(() => {
+        document.getElementById("copyBtn").innerHTML = `<i class="fa fa-clone" aria-hidden="true"></i>`;
+    }, 1000);
+    navigator.clipboard.writeText(roomId);
+});
+
 document.getElementById("myMic").onclick = () => changeMicFunction("myMic");
 document.getElementById("myVolume").onclick = () => {
     var myMicEle = document.getElementById("myVolume");

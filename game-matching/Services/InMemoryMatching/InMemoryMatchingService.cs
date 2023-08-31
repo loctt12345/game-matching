@@ -27,18 +27,21 @@ namespace game_matching.Services.Matching
                 var flag = false;
                 foreach (var room in roomList)
                 {
-                    var userInRoom = room.Players.FirstOrDefault();
-                    if (userInRoom != null)
+                    if (room.IsBlock == false)
                     {
-                        if ((userInRoom.Game.Equals(user.Game))
-                            && (userInRoom.TeamSize == user.TeamSize)
-                            && (room.Players.Count < userInRoom.TeamSize)
-                            )
+                        var userInRoom = room.Players.FirstOrDefault();
+                        if (userInRoom != null)
                         {
-                            room.Players.Add(user);
-                            user.Room = room;
-                            flag = true;
-                            break;
+                            if ((userInRoom.Game.Equals(user.Game))
+                                && (userInRoom.TeamSize == user.TeamSize)
+                                && (room.Players.Count < userInRoom.TeamSize)
+                                )
+                            {
+                                room.Players.Add(user);
+                                user.Room = room;
+                                flag = true;
+                                break;
+                            }
                         }
                     }
                 }
@@ -54,6 +57,21 @@ namespace game_matching.Services.Matching
 
                 result = this.PlayerList.FirstOrDefault(p => p.Id == user.Id);
             }
+            return result;
+        }
+
+        public Player? Matching(Player user, string roomId)
+        {
+            user.Id = Guid.NewGuid();
+            user.ChangeNumber = 1;
+            var room = this.GetRoom(new Guid(roomId));
+            if (room != null)
+            {
+                room.Players.Add(user);
+                user.Room = room;
+                this.PlayerList.Add(user);
+            }
+            var result = this.PlayerList.FirstOrDefault(p => p.Id == user.Id);
             return result;
         }
 
@@ -109,6 +127,28 @@ namespace game_matching.Services.Matching
         {
             var player = this.PlayerList.FirstOrDefault(p => p.SocketId == socketId);
             return player;
+        }
+
+        public bool LockRoom(Guid roomId)
+        {
+            var room = GetRoom(roomId);
+            if (room != null)
+            {
+                room.IsBlock = true;
+                return true;
+            }
+            return false;
+        }
+
+        public bool UnlockRoom(Guid roomId)
+        {
+            var room = GetRoom(roomId);
+            if (room != null)
+            {
+                room.IsBlock = false;
+                return true;
+            }
+            return false;
         }
 
     }

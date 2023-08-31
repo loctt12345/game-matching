@@ -1,7 +1,6 @@
 ﻿function onGameChange() {
     const gameId = document.getElementById("game").value;
     let teamSize = document.getElementById("teamSize");
-
     switch (gameId) {
         case "1":
             teamSize.value = "5";
@@ -20,7 +19,7 @@
         case "3":
             teamSize.value = "1";
             teamSize.readOnly = false;
-            document.body.style.backgroundImage = "url(https://cdn.sforum.vn/sforum/wp-content/uploads/2022/07/mobile-game-publishers-1024x480-1.png)";
+            document.body.style.backgroundImage = "url(https://i.pinimg.com/originals/88/99/59/8899591fcde45ec3991ef48efb053e74.jpg)";
             document.body.style.backgroundRepeat = "no-repeat";
             document.body.style.backgroundSize = "cover";
             break;
@@ -34,37 +33,71 @@ onGameChange();
 var connection = new signalR.HubConnectionBuilder().withUrl("/matchingHub").build();
 
 connection.on("Matched", (room, playerId) => {
-    console.log(room);
-    const modalElement = document.getElementById("waitingModel");
-    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
-    modal.hide();
-    localStorage.setItem("PlayerId", playerId);
-    location.replace("/Home/Room");
+    setTimeout(() => {
+        console.log(room);
+        const modalElement = document.getElementById("waitingModel");
+        const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+        modal.hide();
+        localStorage.setItem("PlayerId", playerId);
+        location.replace("/Home/Room");
+    }, 1500);
 });
 
 document.getElementById("game").onchange = () => {
     onGameChange();
 }
 
+document.getElementById("roomType").onchange = () => {
+    const roomType = document.getElementById("roomType").value;
+    document.body.style.backgroundImage = "url(https://static.vecteezy.com/system/resources/thumbnails/010/047/365/original/retro-land-80s-retro-futuristic-sci-fi-seamless-loop-retro-background-animation-low-poly-terrain-retro-1980s-background-and-a-luorescent-visual-background-retro-neon-background-in-80-s-style-free-video.jpg)";
+    if (roomType === "1") {
+        const roomId = document.getElementById("roomIdContainer");
+        const game = document.getElementById("gameContainer");
+        const teamsize = document.getElementById("teamSizeContainer");
+        game.classList.replace("d-none", "d-flex");
+        teamsize.classList.replace("d-none", "d-flex");
+        roomId.classList.replace("d-flex", "d-none");
+    }
+    else if (roomType == "2") {
+        const roomId = document.getElementById("roomIdContainer");
+        const game = document.getElementById("gameContainer");
+        const teamsize = document.getElementById("teamSizeContainer");
+        roomId.classList.replace("d-none", "d-flex");
+        game.classList.replace("d-flex", "d-none");
+        teamsize.classList.replace("d-flex", "d-none");
+    }
+};
+
 document.getElementById("findGameBtn").onclick = () => {
-    if (form.reportValidity()) {
-        connection.start().then(function () {
-            console.log("Connected!");
-                const game = document.getElementById("game").value;
-                const teamSize = document.getElementById("teamSize").value;
-                const name = document.getElementById("name").value;
+    const roomType = document.getElementById("roomType");
+    const game = document.getElementById("game");
+    const name = document.getElementById("name");
+    const teamSize = document.getElementById("teamSize");
+    const roomId = document.getElementById("roomId");
+    if (name.reportValidity() && roomType.reportValidity()) {
+        if ((roomType.value === "1") && (game.reportValidity()) && (teamSize.reportValidity())
+            || ((roomType.value === "2") && (roomId.reportValidity()))) {
+            connection.start().then(function () {
+                console.log("Connected!");
                 const modalElement = document.getElementById("waitingModel");
                 const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
                 modal.show();
-                const sendMessage = {
-                    "game": game,
-                    "teamSize": teamSize,
-                    "name": name
+                if (roomType.value === "1") {
+                    const sendMessage = {
+                        "game": game.value,
+                        "teamSize": teamSize.value,
+                        "name": name.value,
+                    }
+                    connection.invoke("Matching", sendMessage);
                 }
-                connection.invoke("Matching", sendMessage);
-        }).catch(function (err) {
-            console.error(err.toString());
-        });
+                else
+                    if (roomType.value === "2") {
+                        connection.invoke("MatchingWithRoomId", roomId.value, name.value);
+                    }
+            }).catch(function (err) {
+                console.error(err.toString());
+            });
+        }
     }
 }
 

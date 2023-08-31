@@ -2,40 +2,64 @@
     ViewData["Title"] = "Game-Matching";
 }
 
-<div class="container py-5 bg-light bg-opacity-50 rounded col-12 col-md-8" style="margin-top: 60px;">
+<style type="text/css">
+    body {
+        overflow-y: hidden;
+        background-image: url(https://static.vecteezy.com/system/resources/thumbnails/010/047/365/original/retro-land-80s-retro-futuristic-sci-fi-seamless-loop-retro-background-animation-low-poly-terrain-retro-1980s-background-and-a-luorescent-visual-background-retro-neon-background-in-80-s-style-free-video.jpg);
+    }
+</style>
 
-    <div class="font-weight-bold text-center mb-3">
+<div class="container py-3 bg-light bg-opacity-50 border border-2 col-12 col-md-7" 
+    style="margin-top: 60px; border-radius: 40px;">
+    <div class="font-weight-bold text-center mb-4 mt-3">
         <a href="/"><img class="col-8 col-md-9" src="https://see.fontimg.com/api/renderfont4/1Gxje/eyJyIjoiZnMiLCJoIjo0NiwidyI6MTAwMCwiZnMiOjQ2LCJmZ2MiOiIjMDAwMDAwIiwiYmdjIjoiI0ZGRkZGRiIsInQiOjF9/Z2FtZS1tYXRjaGluZw/crossed-out.png" alt="Modern fonts"></a>
     </div>
 
     <form id="form">
         <div class="d-flex justify-content-center">
             <div class="form-group mb-3 col-md-8 col-12">
-                <label class="form-label fw-bold" for="name">Name: </label>
-                <input type="text" minlength="5" required class="form-control" id="name" />
+                <input type="text" minlength="5" required class="form-control" id="name" placeholder="Enter your name here..."/>
             </div>
         </div>
 
         <div class="d-flex justify-content-center">
             <div class="form-group mb-3 col-md-8 col-12">
-                <label class="form-label fw-bold" for="game">Game: </label>
-                <select class="form-control" id="game">
+                <select class="form-control" required id="roomType">
+                    <option value="" disabled selected>Select room type</option>
+                    <option value="1">Random</option>
+                    <option value="2">Existed room</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="d-none justify-content-center" id="gameContainer">
+            <div class="form-group mb-3 col-md-8 col-12">
+                <select class="form-control" required id="game">
+                    <option value="" disabled selected>Select game</option>
                     <option value="1">League of legend</option>
                     <option value="2">Fifa online 4</option>
                     <option value="3">Other</option>
                 </select>
             </div>
         </div>
-        <div class="d-flex justify-content-center">
+
+        <div class="d-none justify-content-center" id="teamSizeContainer">
             <div class="form-group mb-3 col-md-8 col-12">
-                <label class="form-label fw-bold" for="teamSize">Team size: </label>
                 <input type="number" min="1" class="form-control" id="teamSize" value="0"/>
             </div>
         </div>
+
+        <div class="d-none justify-content-center" id="roomIdContainer">
+            <div class="form-group mb-3 col-md-8 col-12">
+                <input type="text" class="form-control" required id="roomId" placeholder="Enter room id..."/>
+            </div>
+        </div>
+
+
         <div class="form-group d-flex justify-content-center">
             <button type="button" class="btn btn-dark" id="findGameBtn" 
             >
-                Find game
+                Match <i class="fa fa-fire" aria-hidden="true"></i>
             </button>
         </div>
     </form>

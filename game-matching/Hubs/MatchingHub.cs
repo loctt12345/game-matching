@@ -47,7 +47,7 @@ namespace game_matching.Hubs
 
         public async Task Matching(Object messageObject)
         {
-            if (messageObject != null) 
+            if (messageObject != null)
             {
                 string? message = messageObject.ToString();
                 if (message != null)
@@ -73,10 +73,31 @@ namespace game_matching.Hubs
             }
         }
 
+        public async Task MatchingWithRoomId(string roomId, string name)
+        {
+            if (roomId != null && name != null)
+            {
+                var room = _matchingService.GetRoom(new Guid(roomId));
+                if (room != null)
+                {
+                    var anyUser = room.Players.FirstOrDefault();
+                    if (anyUser != null)
+                    {
+                        var thisUser = new Player(Context.ConnectionId, name, anyUser.Game, anyUser.TeamSize);
+                        var result = _matchingService.Matching(thisUser, roomId);
+                        if (result != null)
+                        {
+                            await Clients.Caller.SendAsync("Matched", result.Room, result.Id);
+                        }
+                    }
+                }
+            }
+        }
+
         public async Task ReMatching(string playerId)
         {
             var thisPlayer = _matchingService.ReMatching(playerId, Context.ConnectionId);
-            if (thisPlayer != null) 
+            if (thisPlayer != null)
             {
                 if (thisPlayer.Room != null)
                 {
@@ -105,13 +126,13 @@ namespace game_matching.Hubs
         public async Task ChatRequest(string message)
         {
             var thisPlayer = _matchingService.GetPlayerBySocketId(Context.ConnectionId);
-            if ((thisPlayer != null) && (thisPlayer.Room != null)) 
+            if ((thisPlayer != null) && (thisPlayer.Room != null))
             {
                 var room = _matchingService.GetRoom(thisPlayer.Room.Id);
                 if (room != null)
                 {
                     var playerList = room.Players;
-                    foreach(var player in playerList)
+                    foreach (var player in playerList)
                     {
                         if (player.Id != thisPlayer.Id)
                         {
@@ -158,5 +179,41 @@ namespace game_matching.Hubs
                 }
             }
         }
+
+        public async Task GetRoomId()
+        {
+            var thisPlayer = _matchingService.GetPlayerBySocketId(Context.ConnectionId);
+            if ((thisPlayer != null) && (thisPlayer.Room != null))
+            {
+                await Clients.Caller.SendAsync("ReceiveRoom", thisPlayer.Room.Id);
+            }
+        }
+
+        public async Task LockRoom()
+        {
+            var thisPlayer = _matchingService.GetPlayerBySocketId(Context.ConnectionId);
+            if ((thisPlayer != null) && (thisPlayer.Room != null))
+            {
+                var result = _matchingService.LockRoom(thisPlayer.Room.Id);
+                if (result)
+                {
+                    await Clients.Caller.SendAsync("LockedRoom");
+                }
+            }
+        }
+
+        public async Task UnLockRoom()
+        {
+            var thisPlayer = _matchingService.GetPlayerBySocketId(Context.ConnectionId);
+            if ((thisPlayer != null) && (thisPlayer.Room != null))
+            {
+                var result = _matchingService.UnlockRoom(thisPlayer.Room.Id);
+                if (result)
+                {
+                    await Clients.Caller.SendAsync("UnlockedRoom");
+                }
+            }
+        }
+
     }
 }
