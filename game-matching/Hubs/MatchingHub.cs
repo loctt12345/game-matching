@@ -30,11 +30,12 @@ namespace game_matching.Hubs
                     if (room != null)
                     {
                         var playerList = room.Players;
+                        var newOwner = _matchingService.UpdateRoomOwner(room.Id, thisPlayer);
                         foreach (var player in playerList)
                         {
                             if (player.Id != thisPlayer.Id)
                             {
-                                await Clients.Client(player.SocketId).SendAsync("PlayerDisconnected", thisPlayer);
+                                await Clients.Client(player.SocketId).SendAsync("PlayerDisconnected", thisPlayer, newOwner.SocketId);
                             }
                         }
                     }
@@ -104,7 +105,7 @@ namespace game_matching.Hubs
                     var room = _matchingService.GetRoom(thisPlayer.Room.Id);
                     if (room != null)
                     {
-                        await Clients.Caller.SendAsync("ReMatched", room.Players);
+                        await Clients.Caller.SendAsync("ReMatched", room.Players, room.Owner, room.IsBlock);
                         var playerList = room.Players;
                         foreach (var player in playerList)
                         {
@@ -194,10 +195,22 @@ namespace game_matching.Hubs
             var thisPlayer = _matchingService.GetPlayerBySocketId(Context.ConnectionId);
             if ((thisPlayer != null) && (thisPlayer.Room != null))
             {
-                var result = _matchingService.LockRoom(thisPlayer.Room.Id);
+                var result = _matchingService.LockRoom(thisPlayer.Room.Id, thisPlayer.Id);
                 if (result)
                 {
-                    await Clients.Caller.SendAsync("LockedRoom");
+                    var room = _matchingService.GetRoom(thisPlayer.Room.Id);
+                    if (room != null)
+                    {
+                        var playerList = room.Players;
+                        foreach (var player in playerList)
+                        {
+                            await Clients.Clients(player.SocketId).SendAsync("LockedRoom");
+                        }
+                    }
+                }
+                else
+                {
+                    await Clients.Caller.SendAsync("CannotLockedRoom");
                 }
             }
         }
@@ -207,10 +220,22 @@ namespace game_matching.Hubs
             var thisPlayer = _matchingService.GetPlayerBySocketId(Context.ConnectionId);
             if ((thisPlayer != null) && (thisPlayer.Room != null))
             {
-                var result = _matchingService.UnlockRoom(thisPlayer.Room.Id);
+                var result = _matchingService.UnlockRoom(thisPlayer.Room.Id, thisPlayer.Id);
                 if (result)
                 {
-                    await Clients.Caller.SendAsync("UnlockedRoom");
+                    var room = _matchingService.GetRoom(thisPlayer.Room.Id);
+                    if (room != null)
+                    {
+                        var playerList = room.Players;
+                        foreach (var player in playerList)
+                        {
+                            await Clients.Clients(player.SocketId).SendAsync("UnlockedRoom");
+                        }
+                    }
+                }
+                else
+                {
+                    await Clients.Caller.SendAsync("CannotUnlockedRoom");
                 }
             }
         }

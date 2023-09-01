@@ -48,7 +48,7 @@ namespace game_matching.Services.Matching
                 
                 if (flag == false)
                 {
-                    var room = new Room("");
+                    var room = new Room("", user);
                     room.Id = Guid.NewGuid();
                     room.Players.Add(user);
                     user.Room = room;
@@ -113,6 +113,17 @@ namespace game_matching.Services.Matching
             if (player != null)
             {
                 player.SocketId = socketId;
+                if (player.Room != null)
+                {
+                    var room = GetRoom(player.Room.Id);
+                    if (room != null)
+                    {
+                        if (room.Owner.Id == player.Id)
+                        {
+                            room.Owner.SocketId = socketId;
+                        }
+                    }
+                }
             }
             return player;
         }
@@ -129,10 +140,10 @@ namespace game_matching.Services.Matching
             return player;
         }
 
-        public bool LockRoom(Guid roomId)
+        public bool LockRoom(Guid roomId, Guid playerId)
         {
             var room = GetRoom(roomId);
-            if (room != null)
+            if ((room != null) && (room.Owner.Id == playerId))
             {
                 room.IsBlock = true;
                 return true;
@@ -140,10 +151,10 @@ namespace game_matching.Services.Matching
             return false;
         }
 
-        public bool UnlockRoom(Guid roomId)
+        public bool UnlockRoom(Guid roomId, Guid playerId)
         {
             var room = GetRoom(roomId);
-            if (room != null)
+            if ((room != null) && (room.Owner.Id == playerId))
             {
                 room.IsBlock = false;
                 return true;
@@ -151,5 +162,22 @@ namespace game_matching.Services.Matching
             return false;
         }
 
+        public Player? UpdateRoomOwner(Guid roomId, Player player)
+        {
+            var room = GetRoom(roomId);
+            if ((room != null) && (room.Owner != null))
+            {
+                if (room.Players != null)
+                {
+                    var newOwner = room.Players.FirstOrDefault(p => p.Id != player.Id);
+                    if (newOwner != null)
+                    {
+                        room.Owner = newOwner;
+                        return room.Owner;
+                    }
+                }
+            }
+            return null;
+        }
     }
 }

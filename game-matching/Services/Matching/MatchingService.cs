@@ -46,7 +46,7 @@ namespace game_matching.Services.Matching
                 
                 if (flag == false)
                 {
-                    var room = new Room("");
+                    var room = new Room("", user);
                     room.Players.Add(user);
                     await _gameMatchingDBContext.Rooms.AddAsync(room);
                     await _gameMatchingDBContext.SaveChangesAsync();

@@ -87,7 +87,12 @@ const getAddPlayerHtml = (player) => {
     document.body.appendChild(audioEle);
     return (`
         <div class="card border-secondary mb-2" style="height: 80px" id="${player.socketId}">
-            <div class="card-header d-flex justify-content-center align-items-center" style="height: 30px">${player.name}</div>
+            <div class="card-header d-flex justify-content-center align-items-center" style="height: 30px">
+                <div class="col-md-11">${player.name}</div>
+                <div class="d-none col-md-1 ownerSignal"  id="${"owner" + player.socketId}">
+                    <i class="fa fa-diamond" aria-hidden="true"></i>
+                </div>
+            </div>
             <div class="card-body text-secondary">
                 <h5 class="card-title d-flex justify-content-center">
                     <i class="fa fa-microphone" aria-hidden="true" style="width: 20px" onclick="changeMicFunction('${"mic" + player.socketId}')" id=${"mic" + player.socketId}></i>
@@ -97,8 +102,12 @@ const getAddPlayerHtml = (player) => {
     `);
 }
 
-connection.on("ReMatched", async (list) => {
+connection.on("ReMatched", async (list, roomOnwer, isBlock) => {
     var listElement = document.getElementById("playersList");
+    if (isBlock) {
+        const lock = document.getElementById("lockBtn");
+        lock.innerHTML = `<i class="fa fa-lock" aria-hidden="true"></i>`;
+    }
     for (let i = 0; i < list.length; ++i) {
         if (list[i].socketId != connection.connection.connectionId) {
             listElement.innerHTML = listElement.innerHTML + getAddPlayerHtml(list[i]);
@@ -127,11 +136,20 @@ connection.on("ReMatched", async (list) => {
         }
     }
 
-    setTimeout(async () => {
+    await setTimeout(async () => {
         for (let i = 0; i < list.length; ++i) {
             if (list[i].socketId != connection.connection.connectionId) {
+                if (list[i].socketId === roomOnwer.socketId) {
+                    const ownerEle = document.getElementById("owner" + list[i].socketId);
+                    ownerEle.classList.replace("d-none", "d-flex");
+                }
                 await createPeerConnection(true, list[i].socketId);
                 await handShake(list[i].socketId);
+            }
+            else {
+                if (list[i].socketId === roomOnwer.socketId) {
+                    myOnwer.classList.replace("d-none", "d-flex");
+                }
             }
         }
     }, 1000);
@@ -171,7 +189,21 @@ connection.on("PlayerAdded", async (player) => {
     toast.show();
 });
 
-connection.on("PlayerDisconnected", (player) => {
+const updateNewOwner = (newOwnerSocketId) => {
+    if (newOwnerSocketId === connection.connection.connectionId) {
+        myOnwer.classList.replace("d-none", "d-flex");
+    }
+    else {
+        var playerListEle = document.getElementsByClassName("ownerSignal");
+        for (var i = 0; i < playerListEle.length; ++i) {
+            if (playerListEle[i].id === ("owner" + newOwnerSocketId)) {
+                playerListEle[i].classList.replace("d-none", "d-flex");
+            }
+        }
+    }
+};
+
+connection.on("PlayerDisconnected", (player, newOwnerSocketId) => {
     var playerEle = document.getElementById(player.socketId);
     playerEle?.remove();
     const toastEle = document.getElementById("removePlayerToast");
@@ -188,6 +220,7 @@ connection.on("PlayerDisconnected", (player) => {
     if (analysers[player.socketId] != null) {
         delete analysers[player.socketId];
     }
+    updateNewOwner(newOwnerSocketId);
     toast.show();
 });
 
@@ -311,6 +344,14 @@ connection.on("LockedRoom", () => {
 connection.on("UnlockedRoom", () => {
     const lock = document.getElementById("lockBtn");
     lock.innerHTML = `<i class="fa fa-unlock" aria-hidden="true"></i>`;
+});
+
+connection.on("CannotUnlockedRoom", () => {
+    console.log("cannot");
+});
+
+connection.on("CannotLockedRoom", () => {
+    console.log("cannot");
 });
 
 connection.on("ReceiveRoom", (roomId) => {

@@ -3,7 +3,7 @@
 
 Do you love playing games with other people? Do you want to find new friends who share your passion for gaming? If so, you should try Game-Matching, the web app that connects you to any game you want.  Game-Matching is a platform that lets you join or create games with other players around the world. You can also chat with your teammates, use voice chat. Game-Matching is the ultimate web app for matching game lovers.
 
-#### Link demo: https://ed7e-13-211-78-72.ngrok-free.app/
+#### Link demo: https://e45b-13-211-78-72.ngrok-free.app
 
 ## Table of contents
 - [Feature](#feature)
