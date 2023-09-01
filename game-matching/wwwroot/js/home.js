@@ -33,14 +33,29 @@ onGameChange();
 var connection = new signalR.HubConnectionBuilder().withUrl("/matchingHub").build();
 
 connection.on("Matched", (room, playerId) => {
+    const modalElement = document.getElementById("waitingModel");
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+    modal.show();
     setTimeout(() => {
         console.log(room);
-        const modalElement = document.getElementById("waitingModel");
-        const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
         modal.hide();
         localStorage.setItem("PlayerId", playerId);
         location.replace("/Home/Room");
     }, 1500);
+});
+
+connection.on("MatchedFail", (message) => {
+    switch (message) {
+        case "error":
+            alert("Error ocur!!! Please match again!!!");
+            break;
+        case "full":
+            alert("The room is full!!! Please match again!!!");
+            break;
+        default:
+            break;
+    }
+    connection.stop();
 });
 
 document.getElementById("game").onchange = () => {
@@ -79,9 +94,6 @@ document.getElementById("findGameBtn").onclick = () => {
             || ((roomType.value === "2") && (roomId.reportValidity()))) {
             connection.start().then(function () {
                 console.log("Connected!");
-                const modalElement = document.getElementById("waitingModel");
-                const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
-                modal.show();
                 if (roomType.value === "1") {
                     const sendMessage = {
                         "game": game.value,

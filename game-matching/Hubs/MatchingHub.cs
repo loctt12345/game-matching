@@ -67,7 +67,7 @@ namespace game_matching.Hubs
                         }
                         else
                         {
-                            await Clients.Caller.SendAsync("Match fail");
+                            await Clients.Caller.SendAsync("MatchedFail", "error");
                         }
                     }
                 }
@@ -84,11 +84,18 @@ namespace game_matching.Hubs
                     var anyUser = room.Players.FirstOrDefault();
                     if (anyUser != null)
                     {
-                        var thisUser = new Player(Context.ConnectionId, name, anyUser.Game, anyUser.TeamSize);
-                        var result = _matchingService.Matching(thisUser, roomId);
-                        if (result != null)
+                        if (anyUser.TeamSize < room.Players.Count)
                         {
-                            await Clients.Caller.SendAsync("Matched", result.Room, result.Id);
+                            var thisUser = new Player(Context.ConnectionId, name, anyUser.Game, anyUser.TeamSize);
+                            var result = _matchingService.Matching(thisUser, roomId);
+                            if (result != null)
+                            {
+                                await Clients.Caller.SendAsync("Matched", result.Room, result.Id);
+                            }
+                        }
+                        else
+                        {
+                            await Clients.Caller.SendAsync("MatchedFail", "full");
                         }
                     }
                 }
