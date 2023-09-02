@@ -92,6 +92,9 @@ const getAddPlayerHtml = (player) => {
                 <div class="d-none col-md-1 ownerSignal"  id="${"owner" + player.socketId}">
                     <i class="fa fa-diamond" aria-hidden="true"></i>
                 </div>
+                <div class="d-none col-md-1 kickBtn" style="cursor: pointer;" onclick="kick('${player.socketId}')" id="${"kick" + player.socketId}">
+                    <i class="fa fa-times" aria-hidden="true"></i>
+                </div>
             </div>
             <div class="card-body text-secondary">
                 <h5 class="card-title d-flex justify-content-center">
@@ -101,6 +104,12 @@ const getAddPlayerHtml = (player) => {
         </div>
     `);
 }
+
+const kick = (socketId) => {
+    if (window.confirm("Are you sure to let your teammate leave this room?")) {
+        connection.invoke("KickPlayer", socketId);
+    }
+};
 
 connection.on("ReMatched", async (list, roomOnwer, isBlock) => {
     var listElement = document.getElementById("playersList");
@@ -149,6 +158,10 @@ connection.on("ReMatched", async (list, roomOnwer, isBlock) => {
             else {
                 if (list[i].socketId === roomOnwer.socketId) {
                     myOnwer.classList.replace("d-none", "d-flex");
+                    const kickList = document.getElementsByClassName("kickBtn");
+                    for (let j = 0; j < kickList.length; ++j) {
+                        kickList[j].classList.replace("d-none", "d-flex");
+                    }
                 }
             }
         }
@@ -184,6 +197,11 @@ connection.on("PlayerAdded", async (player) => {
         let isMuted = document.getElementById("myMic").classList.contains("fa-microphone-slash");
         await createPeerConnection(isMuted, player.socketId);
     }
+    if (myOnwer.classList.contains("d-flex")) {
+        console.log("abc");
+        var kickEle = document.getElementById("kick" + player.socketId);
+        kickEle.classList.replace("d-none", "d-flex");
+    }
     const toastEle = document.getElementById("newPlayerToast");
     const toast = bootstrap.Toast.getOrCreateInstance(toastEle);
     toast.show();
@@ -192,6 +210,10 @@ connection.on("PlayerAdded", async (player) => {
 const updateNewOwner = (newOwnerSocketId) => {
     if (newOwnerSocketId === connection.connection.connectionId) {
         myOnwer.classList.replace("d-none", "d-flex");
+        const kickList = document.getElementsByClassName("kickBtn");
+        for (let j = 0; j < kickList.length; ++j) {
+            kickList[j].classList.replace("d-none", "d-flex");
+        }
     }
     else {
         var playerListEle = document.getElementsByClassName("ownerSignal");
@@ -346,12 +368,16 @@ connection.on("UnlockedRoom", () => {
     lock.innerHTML = `<i class="fa fa-unlock" aria-hidden="true"></i>`;
 });
 
-connection.on("CannotUnlockedRoom", () => {
-    console.log("cannot");
+connection.on("NotOwner", () => {
+    alert("You are not the room owner!!!");
 });
 
-connection.on("CannotLockedRoom", () => {
-    console.log("cannot");
+connection.on("Kicked", () => {
+    alert("You have kicked by room owner :D!!!!");
+    connection.stop();
+    setTimeout(() => {
+        location.replace("/");
+    }, 2000);
 });
 
 connection.on("ReceiveRoom", (roomId) => {

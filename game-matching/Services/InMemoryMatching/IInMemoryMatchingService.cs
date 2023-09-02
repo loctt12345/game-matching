@@ -14,5 +14,6 @@ namespace game_matching.Services.Matching
         public bool LockRoom(Guid roomId, Guid playerId);
         public bool UnlockRoom(Guid roomId, Guid playerId);
         public Player? UpdateRoomOwner(Guid roomId, Player player);
+        public void ChangeNumber(string playerId);
     }
 }

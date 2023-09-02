@@ -14,12 +14,20 @@ namespace game_matching.Services.Matching
         {
         }
 
+        public void ChangeNumber(string playerId)
+        {
+            var player = this.PlayerList.FirstOrDefault(p => p.Id == new Guid(playerId));
+            if (player != null)
+            {
+                player.ChangeNumber++;
+            }
+        }
+
         public Player? Matching(Player user)
         {
             Player? result = null;
             if (user != null) 
             {
-                user.ChangeNumber = 1;
                 user.Id = Guid.NewGuid();
                 this.PlayerList.Add(user);
 
@@ -63,7 +71,6 @@ namespace game_matching.Services.Matching
         public Player? Matching(Player user, string roomId)
         {
             user.Id = Guid.NewGuid();
-            user.ChangeNumber = 1;
             var room = this.GetRoom(new Guid(roomId));
             if (room != null)
             {
@@ -83,7 +90,7 @@ namespace game_matching.Services.Matching
             {
                 if (user.ChangeNumber == 1)
                 {
-                    user.ChangeNumber = 2;
+                    ChangeNumber(user.Id.ToString());
                 }
                 else 
                 {
